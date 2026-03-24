@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vacuous Brains</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar panel">
+        <div class="sidebar-copy">
+          <p class="eyebrow">Tierlist</p>
+          <h1>Vacuous Brains</h1>
+        </div>
+
+        <section class="control-block">
+          <div class="section-head">
+            <h2>List Settings</h2>
+          </div>
+          <label class="field">
+            <span>Tier list name</span>
+            <input id="listTitleInput" type="text" maxlength="60" placeholder="My favorite games" />
+          </label>
+          <div class="button-row">
+            <button id="saveButton" class="primary" type="button">Save Tier List</button>
+            <button id="newListButton" type="button">New List</button>
+          </div>
+          <p id="statusMessage" class="status" aria-live="polite"></p>
+        </section>
+
+        <section class="control-block">
+          <div class="section-head">
+            <h2>Add Row</h2>
+          </div>
+          <button id="addRowButton" type="button">Add Row</button>
+        </section>
+
+        <section class="control-block">
+          <div class="section-head">
+            <h2>Add Object</h2>
+          </div>
+          <div class="inline-form">
+            <input id="itemNameInput" type="text" maxlength="28" placeholder="Object name" />
+            <button id="addItemButton" type="button">Create</button>
+          </div>
+        </section>
+
+        <section class="control-block saved-block">
+          <div class="section-head">
+            <h2>Saved Tier Lists</h2>
+          </div>
+          <div id="savedLists" class="saved-lists"></div>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <section class="hero panel">
+          <div>
+            <p class="eyebrow">Board</p>
+            <h2>Your board</h2>
+          </div>
+          <p class="hero-copy">Drag items into any row.</p>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <h2>Tier Board</h2>
+          </div>
+          <div id="tierBoard" class="tier-board" aria-label="Tier list board"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <h2>Object Pool</h2>
+            <span class="hint">Drag from here into rows</span>
+          </div>
+          <div id="pool" class="pool dropzone" data-row-id="pool"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
