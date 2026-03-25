@@ -1,0 +1,7 @@
+{
+  "name": "vacuous-brains",
+  "private": true,
+  "dependencies": {
+    "@vercel/blob": "latest"
+  }
+}

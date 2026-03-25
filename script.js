@@ -1,5 +1,3 @@
-const STORAGE_KEY = "spectrum-tierlists-v1";
-
 const DEFAULT_ROW_COUNT = 5;
 const DEFAULT_ITEMS = ["Mario", "Zelda", "Sonic", "Kirby", "Pikachu"];
 
@@ -39,20 +37,6 @@ function createDefaultBoard() {
   state.rows = Array.from({ length: DEFAULT_ROW_COUNT }, () => createRow());
   state.items = DEFAULT_ITEMS.map((name) => createItem(name));
   state.activeSaveId = null;
-}
-
-function loadSavedLists() {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    state.savedLists = raw ? JSON.parse(raw) : [];
-  } catch (error) {
-    state.savedLists = [];
-    setStatus("Saved lists could not be read. Starting fresh.");
-  }
-}
-
-function persistSavedLists() {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.savedLists));
 }
 
 function setStatus(message) {
@@ -242,21 +226,31 @@ function removeItem(itemId) {
   render();
 }
 
-function saveCurrentList() {
+async function saveCurrentList() {
   state.title = listTitleInput.value.trim() || "Untitled Tier List";
   const snapshot = getBoardSnapshot();
-  const existingIndex = state.savedLists.findIndex((entry) => entry.id === snapshot.id);
 
-  if (existingIndex >= 0) {
-    state.savedLists[existingIndex] = snapshot;
-  } else {
-    state.savedLists.unshift(snapshot);
+  try {
+    const response = await fetch("/api/lists", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(snapshot),
+    });
+
+    if (!response.ok) {
+      throw new Error("Save failed");
+    }
+
+    const data = await response.json();
+    state.savedLists = Array.isArray(data.lists) ? data.lists : [];
+    state.activeSaveId = snapshot.id;
+    setStatus("Tier list saved.");
+    render();
+  } catch (error) {
+    setStatus("Could not save to Blob.");
   }
-
-  state.activeSaveId = snapshot.id;
-  persistSavedLists();
-  setStatus("Tier list saved.");
-  render();
 }
 
 function loadList(saveId) {
@@ -271,14 +265,26 @@ function loadList(saveId) {
   render();
 }
 
-function deleteList(saveId) {
-  state.savedLists = state.savedLists.filter((entry) => entry.id !== saveId);
-  if (state.activeSaveId === saveId) {
-    state.activeSaveId = null;
+async function deleteList(saveId) {
+  try {
+    const response = await fetch(`/api/lists?id=${encodeURIComponent(saveId)}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error("Delete failed");
+    }
+
+    const data = await response.json();
+    state.savedLists = Array.isArray(data.lists) ? data.lists : [];
+    if (state.activeSaveId === saveId) {
+      state.activeSaveId = null;
+    }
+    setStatus("Saved tier list deleted.");
+    render();
+  } catch (error) {
+    setStatus("Could not delete from Blob.");
   }
-  persistSavedLists();
-  setStatus("Saved tier list deleted.");
-  render();
 }
 
 function renderSavedLists() {
@@ -330,6 +336,24 @@ function resetBoard() {
   render();
 }
 
+async function loadSavedLists() {
+  try {
+    const response = await fetch("/api/lists", {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("Load failed");
+    }
+
+    const data = await response.json();
+    state.savedLists = Array.isArray(data.lists) ? data.lists : [];
+  } catch (error) {
+    state.savedLists = [];
+    setStatus("Cloud save unavailable.");
+  }
+}
+
 saveButton.addEventListener("click", saveCurrentList);
 newListButton.addEventListener("click", resetBoard);
 addRowButton.addEventListener("click", addRow);
@@ -343,11 +367,19 @@ listTitleInput.addEventListener("input", () => {
   state.title = listTitleInput.value;
 });
 
-loadSavedLists();
-createDefaultBoard();
-if (state.savedLists.length > 0) {
-  loadList(state.savedLists[0].id);
-} else {
+async function init() {
+  createDefaultBoard();
   render();
-  setStatus("Create rows and objects, then drag items into place.");
+  setStatus("Loading shared tier lists...");
+  await loadSavedLists();
+
+  if (state.savedLists.length > 0) {
+    loadList(state.savedLists[0].id);
+    return;
+  }
+
+  render();
+  setStatus("Create rows and objects, then save to Blob.");
 }
+
+init();
