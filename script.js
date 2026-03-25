@@ -7,12 +7,14 @@ const state = {
   items: [],
   savedLists: [],
   activeSaveId: null,
+  selectedItemId: null,
 };
 
 const listTitleInput = document.getElementById("listTitleInput");
 const itemNameInput = document.getElementById("itemNameInput");
 const saveButton = document.getElementById("saveButton");
 const newListButton = document.getElementById("newListButton");
+const copyTextButton = document.getElementById("copyTextButton");
 const addRowButton = document.getElementById("addRowButton");
 const addItemButton = document.getElementById("addItemButton");
 const tierBoard = document.getElementById("tierBoard");
@@ -53,6 +55,53 @@ function getBoardSnapshot() {
   };
 }
 
+function buildShareText() {
+  const title = listTitleInput.value.trim() || "Untitled Tier List";
+  const lines = [title, ""];
+
+  state.rows.forEach((row, index) => {
+    const rowItems = state.items
+      .filter((item) => item.rowId === row.id)
+      .map((item) => item.name);
+    lines.push(`Tier ${index + 1}: ${rowItems.length ? rowItems.join(", ") : "-"}`);
+  });
+
+  const poolItems = state.items
+    .filter((item) => item.rowId === "pool")
+    .map((item) => item.name);
+
+  if (poolItems.length > 0) {
+    lines.push("");
+    lines.push(`Unranked: ${poolItems.join(", ")}`);
+  }
+
+  return lines.join("\n");
+}
+
+async function copyShareText() {
+  const text = buildShareText();
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "");
+      helper.style.position = "absolute";
+      helper.style.left = "-9999px";
+      document.body.appendChild(helper);
+      helper.select();
+      document.execCommand("copy");
+      helper.remove();
+    }
+
+    setStatus("Tier list text copied.");
+  } catch (error) {
+    setStatus("Could not copy text.");
+  }
+}
+
 function render() {
   renderBoard();
   renderPool();
@@ -79,14 +128,19 @@ function renderBoard() {
     const dropzone = document.createElement("div");
     dropzone.className = "tier-dropzone dropzone";
     dropzone.dataset.rowId = row.id;
+    dropzone.tabIndex = 0;
 
     const items = state.items.filter((item) => item.rowId === row.id);
     if (items.length > 0) {
       dropzone.classList.add("has-items");
     }
+    if (state.selectedItemId) {
+      dropzone.classList.add("ready-target");
+    }
     items.forEach((item) => dropzone.appendChild(buildItemCard(item)));
 
     attachDropzoneEvents(dropzone, row.id);
+    attachTapTargetEvents(dropzone, row.id);
 
     const actions = document.createElement("div");
     actions.className = "row-actions";
@@ -105,6 +159,7 @@ function renderBoard() {
 
 function renderPool() {
   pool.innerHTML = "";
+  pool.tabIndex = 0;
 
   const items = state.items.filter((item) => item.rowId === "pool");
   if (items.length > 0) {
@@ -112,9 +167,15 @@ function renderPool() {
   } else {
     pool.classList.remove("has-items");
   }
+  if (state.selectedItemId) {
+    pool.classList.add("ready-target");
+  } else {
+    pool.classList.remove("ready-target");
+  }
 
   items.forEach((item) => pool.appendChild(buildItemCard(item)));
   attachDropzoneEvents(pool, "pool");
+  attachTapTargetEvents(pool, "pool");
 }
 
 function buildItemCard(item) {
@@ -122,6 +183,9 @@ function buildItemCard(item) {
   card.className = "item-card";
   card.draggable = true;
   card.dataset.itemId = item.id;
+  if (state.selectedItemId === item.id) {
+    card.classList.add("selected");
+  }
 
   const name = document.createElement("span");
   name.className = "item-name";
@@ -139,11 +203,23 @@ function buildItemCard(item) {
 
   card.append(name, removeButton);
   card.addEventListener("dragstart", (event) => {
+    state.selectedItemId = item.id;
     event.dataTransfer.setData("text/plain", item.id);
     event.dataTransfer.effectAllowed = "move";
   });
+  card.addEventListener("click", () => selectItem(item.id));
 
   return card;
+}
+
+function selectItem(itemId) {
+  state.selectedItemId = state.selectedItemId === itemId ? null : itemId;
+  setStatus(
+    state.selectedItemId
+      ? "Item selected. Tap a row to place it."
+      : "Selection cleared.",
+  );
+  render();
 }
 
 function attachDropzoneEvents(element, rowId) {
@@ -182,7 +258,34 @@ function moveItem(itemId, rowId) {
   const item = state.items.find((entry) => entry.id === itemId);
   if (!item) return;
   item.rowId = rowId;
+  state.selectedItemId = null;
   render();
+}
+
+function attachTapTargetEvents(element, rowId) {
+  if (element.dataset.tapBound === "true") {
+    return;
+  }
+
+  element.dataset.tapBound = "true";
+  const handleActivate = () => {
+    if (!state.selectedItemId) return;
+    moveItem(state.selectedItemId, rowId);
+    setStatus("Item moved.");
+  };
+
+  element.addEventListener("click", (event) => {
+    if (!state.selectedItemId) return;
+    if (event.target.closest(".item-card") || event.target.closest(".row-remove")) return;
+    handleActivate();
+  });
+
+  element.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleActivate();
+    }
+  });
 }
 
 function addRow() {
@@ -222,6 +325,9 @@ function addItem() {
 
 function removeItem(itemId) {
   state.items = state.items.filter((item) => item.id !== itemId);
+  if (state.selectedItemId === itemId) {
+    state.selectedItemId = null;
+  }
   setStatus("Object removed.");
   render();
 }
@@ -356,6 +462,7 @@ async function loadSavedLists() {
 
 saveButton.addEventListener("click", saveCurrentList);
 newListButton.addEventListener("click", resetBoard);
+copyTextButton.addEventListener("click", copyShareText);
 addRowButton.addEventListener("click", addRow);
 addItemButton.addEventListener("click", addItem);
 

@@ -1,10 +1,10 @@
 :root {
   --bg: #090909;
-  --panel: rgba(17, 17, 17, 0.88);
-  --panel-border: rgba(255, 255, 255, 0.08);
+  --panel: rgba(18, 18, 18, 0.86);
+  --panel-border: rgba(255, 255, 255, 0.09);
   --text: #f7f7f2;
   --muted: #b7b7ad;
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
   --row-height: 82px;
   --label-width: 28px;
 }
@@ -129,7 +129,7 @@ h2 {
 input {
   width: 100%;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   padding: 12px 14px;
   outline: none;
@@ -143,7 +143,7 @@ input:focus {
 button {
   border-radius: 14px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
   cursor: pointer;
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
@@ -185,6 +185,10 @@ button.primary {
   justify-content: space-between;
   gap: 18px;
   align-items: end;
+  background:
+    radial-gradient(circle at top right, rgba(255, 212, 70, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    var(--panel);
 }
 
 .hero-copy {
@@ -198,7 +202,9 @@ button.primary {
   overflow: hidden;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(5, 5, 5, 0.92);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    rgba(5, 5, 5, 0.94);
 }
 
 .tier-board::before {
@@ -244,7 +250,10 @@ button.primary {
   gap: 12px;
   padding: 14px;
   min-width: 0;
-  background: rgba(18, 18, 18, 0.96);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    rgba(18, 18, 18, 0.96);
+  transition: background 140ms ease, outline-color 140ms ease, box-shadow 140ms ease;
 }
 
 .tier-dropzone::after {
@@ -284,12 +293,12 @@ button.primary {
   border-radius: 20px;
   border: 1px dashed rgba(255, 255, 255, 0.18);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
     rgba(0, 0, 0, 0.2);
 }
 
 .pool::after {
-  content: "Unranked items stay here";
+  content: "Tap item, then tap row";
   color: rgba(255, 255, 255, 0.54);
   font-size: 0.76rem;
   letter-spacing: 0.08em;
@@ -301,18 +310,41 @@ button.primary {
   outline-offset: -3px;
 }
 
+.dropzone.ready-target {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.dropzone.ready-target:hover,
+.dropzone.ready-target:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.72);
+  outline-offset: -3px;
+}
+
 .item-card {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-height: 48px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(10, 10, 10, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    rgba(10, 10, 10, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   cursor: grab;
   user-select: none;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.item-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.item-card.selected {
+  border-color: rgba(255, 214, 10, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 214, 10, 0.28);
 }
 
 .item-card:active {
@@ -348,7 +380,9 @@ button.primary {
   align-items: center;
   padding: 14px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -385,7 +419,7 @@ button.primary {
 @media (max-width: 640px) {
   :root {
     --label-width: 18px;
-    --row-height: 74px;
+    --row-height: 86px;
   }
 
   .app-shell {
@@ -407,6 +441,17 @@ button.primary {
 
   .tier-row {
     grid-template-columns: var(--label-width) 1fr;
+  }
+
+  .tier-dropzone {
+    padding: 12px 10px;
+    gap: 10px;
+  }
+
+  .item-card {
+    width: 100%;
+    justify-content: space-between;
+    min-height: 52px;
   }
 
   .row-actions {
